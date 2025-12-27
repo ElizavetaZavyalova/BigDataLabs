@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123"   # HTTP интерфейс
+      - "9000:9000"   # TCP интерфейс
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./init-clichouse:/docker-entrypoint-initdb.d
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: pass
+
+
+  spark:
+    build: .
+    container_name: spark-app
+    depends_on:
+      - postgres
+      - clickhouse
+    volumes:
+      - ./data:/data
+      - ./app:/app
+    tty: true
+    stdin_open: true
+    ports:
+      - "4040:4040"
+    #command: /bin/bash
+
+volumes:
+  pgdata:
+  clickhouse_data:
+

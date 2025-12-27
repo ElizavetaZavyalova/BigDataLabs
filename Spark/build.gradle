@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.example'
+version = 'Java_11.0'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+java {
+    sourceCompatibility = '11'
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+    // Spark
+    implementation 'org.apache.spark:spark-core_2.12:3.5.0'
+    implementation 'org.apache.spark:spark-sql_2.12:3.5.0'
+
+    // PostgreSQL JDBC
+    implementation 'org.postgresql:postgresql:42.7.1'
+
+    // https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc
+    implementation 'com.clickhouse:clickhouse-jdbc:0.6.3'
+
+    implementation "org.apache.httpcomponents.client5:httpclient5:5.2.1"
+    implementation "org.apache.httpcomponents.core5:httpcore5:5.2.1"
+
+
+    // Logging
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+}
+test {
+    useJUnitPlatform()
+}
+
+
+jar {
+    archiveFileName.set("app.jar")
+    def jars = configurations.runtimeClasspath.files.collect {
+        "lib/${it.name}"
+    }
+    manifest {
+        attributes 'Main-Class': 'com.example.RunApp',
+                'Class-Path': jars.join(' ')
+    }
+}
+tasks.register('copyAllDependencies', Copy) {
+    from(configurations.runtimeClasspath.files)
+    into("${buildDir}/libs/lib")
+}
+jar.dependsOn('copyAllDependencies')
+
+
+
