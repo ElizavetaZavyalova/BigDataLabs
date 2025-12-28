@@ -7,7 +7,6 @@ import lombok.Data;
 public class MockDataEvent {
     private String id;
 
-    // Customer
     @JsonProperty("customer_first_name")
     private String customerFirstName;
 
@@ -35,7 +34,7 @@ public class MockDataEvent {
     @JsonProperty("customer_pet_breed")
     private String customerPetBreed;
 
-    // Seller
+
     @JsonProperty("seller_first_name")
     private String sellerFirstName;
 
@@ -51,7 +50,7 @@ public class MockDataEvent {
     @JsonProperty("seller_postal_code")
     private String sellerPostalCode;
 
-    // Product
+
     @JsonProperty("product_name")
     private String productName;
 
@@ -64,7 +63,7 @@ public class MockDataEvent {
     @JsonProperty("product_quantity")
     private String productQuantity;
 
-    // Sale
+
     @JsonProperty("sale_date")
     private String saleDate;
 
@@ -83,7 +82,7 @@ public class MockDataEvent {
     @JsonProperty("sale_product_id")
     private String saleProductId;
 
-    // Store
+
     @JsonProperty("store_name")
     private String storeName;
 
@@ -108,7 +107,6 @@ public class MockDataEvent {
     @JsonProperty("pet_category")
     private String petCategory;
 
-    // Product details
     @JsonProperty("product_weight")
     private String productWeight;
 
@@ -139,7 +137,6 @@ public class MockDataEvent {
     @JsonProperty("product_expiry_date")
     private String productExpiryDate;
 
-    // Supplier
     @JsonProperty("supplier_name")
     private String supplierName;
 

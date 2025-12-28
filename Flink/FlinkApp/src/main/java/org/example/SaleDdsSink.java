@@ -22,19 +22,19 @@ public class SaleDdsSink extends RichSinkFunction<MockDataEvent> {
                 "postgres",
                 "postgres");
 
-        // Основной insert
+
         stmt = conn.prepareStatement(
             "INSERT INTO postgres.dds.sale_ods " +
             "(customer_id, product_id, sale_date, sale_quantity, sale_total_price) " +
             "VALUES (?, ?, ?, ?, ?)"
         );
 
-        // Выборка customer_id по email
+
         customerIdStmt = conn.prepareStatement(
             "SELECT id FROM postgres.dds.customer_ods WHERE customer_email = ? LIMIT 1"
         );
 
-        // Выборка product_id по name
+
         productIdStmt = conn.prepareStatement(
             "SELECT id FROM postgres.dds.product_ods WHERE product_name = ? LIMIT 1"
         );
@@ -42,7 +42,7 @@ public class SaleDdsSink extends RichSinkFunction<MockDataEvent> {
 
     @Override
     public void invoke(MockDataEvent e, Context ctx) throws Exception {
-        // Получаем customer_id
+
         customerIdStmt.setString(1, e.getCustomerEmail());
         ResultSet rsCustomer = customerIdStmt.executeQuery();
         Integer customerId = null;
@@ -51,7 +51,7 @@ public class SaleDdsSink extends RichSinkFunction<MockDataEvent> {
         }
         rsCustomer.close();
 
-        // Получаем product_id
+
         productIdStmt.setString(1, e.getProductName());
         ResultSet rsProduct = productIdStmt.executeQuery();
         Integer productId = null;
@@ -68,7 +68,7 @@ public class SaleDdsSink extends RichSinkFunction<MockDataEvent> {
             stmt.setObject(5, safeBigDecimal(e.getSaleTotalPrice()));
             stmt.executeUpdate();
         } else {
-            // Можно логировать пропущенные записи
+
             System.out.println("Пропущена запись: customer=" + e.getCustomerEmail() + ", product=" + e.getProductName());
         }
     }
@@ -91,4 +91,3 @@ public class SaleDdsSink extends RichSinkFunction<MockDataEvent> {
         catch (NumberFormatException ex) { return null; }
     }
 }
-
