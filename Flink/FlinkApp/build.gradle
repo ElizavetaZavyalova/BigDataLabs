@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+       // Flink
+    implementation 'org.apache.flink:flink-streaming-java:1.17.1'
+    implementation 'org.apache.flink:flink-connector-kafka:1.17.1'
+
+    // JSON
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+
+    // PostgreSQL
+     implementation 'org.postgresql:postgresql:42.7.1'
+
+    // JUnit 5
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    archiveFileName.set("fat-flink.jar")
+    manifest {
+        attributes 'Main-Class': 'org.example.FlinkStarSchemaJob'
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // Добавляем все зависимости в jar
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}

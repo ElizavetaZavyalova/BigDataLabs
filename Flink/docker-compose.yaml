@@ -1,0 +1,116 @@
+version: '3.8'
+
+networks:
+  flink-net:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - flink-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - flink-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - flink-net
+
+  jobmanager:
+    image: apache/flink:1.18.1
+    container_name: flink-jobmanager
+    hostname: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - JOB_MANAGER_MEMORY_PROCESS_SIZE=1600m
+      - FLINK_ENV_JAVA_OPTS=-Djobmanager.rpc.address=jobmanager
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+      - postgres
+    command: jobmanager
+    networks:
+      - flink-net
+
+  taskmanager:
+    image: apache/flink:1.18.1
+    container_name: flink-taskmanager
+    hostname: taskmanager
+    depends_on:
+      - jobmanager
+      - kafka
+      - postgres
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=4
+      - TASK_MANAGER_MEMORY_PROCESS_SIZE=2048m
+      - FLINK_ENV_JAVA_OPTS=-Djobmanager.rpc.address=jobmanager
+    command: taskmanager
+    networks:
+      - flink-net
+
+  java-job:
+    image: eclipse-temurin:17-jdk
+    container_name: java-job
+    depends_on:
+      - postgres
+      - kafka
+    volumes:
+      - ./app_kafka:/app_kafka
+    working_dir: /app_kafka
+    command: ["java", "-jar", "fat-kafka.jar"]
+    networks:
+      - flink-net
+
+  flink-job-runner:
+    image: apache/flink:1.18.1
+    container_name: flink-job-runner
+    depends_on:
+      - jobmanager
+      - taskmanager
+      - kafka
+      - postgres
+      - java-job
+    volumes:
+      - ./app_flink:/opt/flink/jobs
+    working_dir: /opt/flink/jobs
+    command: >
+      flink run -m jobmanager:8081 -p 4 /opt/flink/jobs/fat-flink.jar
+    networks:
+      - flink-net
+
+volumes:
+  pgdata:
