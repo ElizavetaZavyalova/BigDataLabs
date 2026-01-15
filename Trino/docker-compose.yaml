@@ -1,0 +1,79 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/data/postgres
+      - ./init/init-ps:/docker-entrypoint-initdb.d
+
+  ch-source:
+    image: clickhouse/clickhouse-server:latest
+    container_name: ch-source
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: pass
+      CLICKHOUSE_DB: default
+    ports:
+      - "9000:9000"     # TCP
+      - "8123:8123"     # HTTP
+    volumes:
+      - ./data/clickhouse:/data/clickhouse
+      - ./init/init-ch-sourse:/docker-entrypoint-initdb.d
+
+  ch-target:
+    image: clickhouse/clickhouse-server:latest
+    container_name: ch-target
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: pass
+      CLICKHOUSE_DB: default
+    ports:
+      - "9001:9000"     # TCP
+      - "8124:8123"     # HTTP
+    volumes:
+      - ./init/init-ch-target:/docker-entrypoint-initdb.d
+
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    depends_on:
+      - ch-source
+      - ch-target
+      - postgres
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/v1/info" ]
+      interval: 10s
+      retries: 10
+      timeout: 5s
+      start_period: 10s
+
+  trino-etl:
+    image: trinodb/trino:latest
+    container_name: etl
+    volumes:
+      - ./init/trino:/scripts
+    depends_on:
+      - trino
+    entrypoint: >
+      sh -c "
+        echo 'Waiting for Trino to be ready...';
+        until trino --server trino:8080 --execute 'SELECT 1'; do
+            echo 'Trino not ready yet, sleeping 5s...';
+            sleep 5;
+        done;
+        echo 'Trino is ready, starting ETL...';
+        trino --server trino:8080 -f /scripts/init.sql
+      "
+
