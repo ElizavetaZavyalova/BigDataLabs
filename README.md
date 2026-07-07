@@ -6,4 +6,4 @@
 Анализ больших данных - лабораторная работа №3 - flink(https://github.com/ElizavetaZavyalova/BigDataLabs/tree/FLINK)
 
 
-Анализ больших данных - лабораторная работа №4 - flink(https://github.com/ElizavetaZavyalova/BigDataLabs/tree/Trino)
+Анализ больших данных - лабораторная работа №4 - Trino(https://github.com/ElizavetaZavyalova/BigDataLabs/tree/Trino)
